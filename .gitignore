@@ -122,3 +122,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+Datasets/audio/47/
+
+Datasets/audio/66/
+
+Datasets/__MACOSX/
+
+.idea/
