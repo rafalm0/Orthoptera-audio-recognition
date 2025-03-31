@@ -14,7 +14,7 @@ import os
 import glob
 import ntpath
 import numpy as np
-from leaf_pytorch.frontend import Leaf
+from speechbrain.lobes.features import Fbank
 import torch.nn.functional as F
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
 import seaborn as sn
@@ -236,9 +236,7 @@ class AudioClassifier(nn.Module):
 
         self.amp_db = transforms.AmplitudeToDB(top_db=top_db)
 
-        # LEAF frontend
-        self.leaf = Leaf(n_filters=N_MELS, sample_rate=SAMPLE_RATE, window_stride=leaf_hop, window_len=leaf_hop*2,
-                         init_max_freq=SAMPLE_RATE/2)
+        self.leaf = Fbank(n_mels=N_MELS)
 
         # First Convolution Block with Relu and Batch Norm. Use Kaiming Initialization
         self.conv1 = nn.Conv2d(N_CHANNELS, 8, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
