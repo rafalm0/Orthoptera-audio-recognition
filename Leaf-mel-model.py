@@ -32,10 +32,10 @@ warnings.filterwarnings('ignore')
 # leaf_pytorch: commented out print(output.shape) in filters.py file to supress output shape printout
 
 # specifications for operation
-frontend = "LEAF"                       # define frontend ("MEL", "LEAF", "leafPCEN", "leafFB")
-train_model = True                      # activate training
+frontend = "MEL"                       # define frontend ("MEL", "LEAF", "leafPCEN", "leafFB")
+train_model = False                      # activate training
 test_model = True                       # activate testing
-test_point = 57                         # for testing trained model
+test_point = 61                         # for testing trained model
 early_stop = True                       # activate early stopping
 augmentation = True                     # activate data augmentation
 dataset = 66                            # specify dataset to use (32, 47, 66)
@@ -69,14 +69,14 @@ if early_stop:
 else:
     num_epochs = n_epochs
 
-train_data_path = f"{os.getcwd()}/Datasets/{dataset} Train Chunks/"               # training dataset
-validation_data_path = f"{os.getcwd()}/Datasets/{dataset} Validation Chunks/"     # validation dataset
-test_data_path = f"{os.getcwd()}/Datasets/{dataset} Test Chunks/"                 # test dataset
+train_data_path = f"{os.getcwd()}/Datasets/{dataset} train/"               # training dataset
+validation_data_path = f"{os.getcwd()}/Datasets/{dataset} validation/"     # validation dataset
+test_data_path = f"{os.getcwd()}/Datasets/{dataset} test/"                 # test dataset
 
 Path(os.getcwd() + f"/Results/").mkdir(parents=True, exist_ok=True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using {frontend} on {device}")
+print(f"Using {device}")
 
 # create list of species and assign class identifier
 ID_list = []
@@ -228,7 +228,7 @@ class AudioClassifier(nn.Module):
                                      min_snr_in_db=25, max_snr_in_db=40, min_f_decay=-2, max_f_decay=1.5)
 
         self.impulse = ApplyImpulseResponse(p=0.7, p_mode="per_example", sample_rate=SAMPLE_RATE, mode="per_example",
-                                            compensate_for_propagation_delay=True, ir_paths="44100 IRs")
+                                            compensate_for_propagation_delay=True, ir_paths="IRs")
 
         # Mel frontend
         self.spectrogram = transforms.MelSpectrogram(sample_rate=SAMPLE_RATE, n_mels=N_MELS, hop_length=HOP_LENGTH,
@@ -236,7 +236,13 @@ class AudioClassifier(nn.Module):
 
         self.amp_db = transforms.AmplitudeToDB(top_db=top_db)
 
-        self.leaf = Fbank(n_mels=N_MELS)
+        self.leaf = self.leaf = transforms.MelSpectrogram(
+                        sample_rate=SAMPLE_RATE,
+                        n_mels=N_MELS,
+                        hop_length=int(SAMPLE_RATE * leaf_hop / 1000),
+                        n_fft=1024,
+                        f_max=SAMPLE_RATE / 2
+                    )
 
         # First Convolution Block with Relu and Batch Norm. Use Kaiming Initialization
         self.conv1 = nn.Conv2d(N_CHANNELS, 8, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
@@ -617,5 +623,5 @@ ModelTest = f"/Results/{frontend}_{seed}_{checkpoint}.pth"
 
 # load and test saved model if specified
 if test_model:
-    myModel = torch.load(os.getcwd() + ModelTest, map_location=torch.device('cpu'))
+    myModel = torch.load(os.getcwd() + ModelTest, map_location=torch.device('cpu'),weights_only=False)
     inference(myModel, test_dl)
